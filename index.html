@@ -371,8 +371,8 @@
             // 2. CONSTANTS & CONFIGURATION
             // =====================================================
             const PING_INTERVAL = 10000;
-            const CONNECTION_CHECK_INTERVAL = 30000; 
-            const TRADE_POLL_INTERVAL_SLOW = 2000; // Slower polling normally
+            const CONNECTION_CHECK_INTERVAL = 15000; // Faster check
+            const TRADE_POLL_INTERVAL_SLOW = 2000; 
 
             // =====================================================
             // 3. APPLICATION STATE
@@ -437,8 +437,8 @@
             }
 
             function calculateNextStake() {
-                const baseStake = parseFloat(baseStakeInput.value);
-                return Number((baseStake * Math.pow(2.06, lossStreak)).toFixed(2));
+                const baseStakeValue = parseFloat(baseStakeInput.value);
+                return Number((baseStakeValue * Math.pow(2.06, lossStreak)).toFixed(2));
             }
 
             function checkStopLoss() {
@@ -543,6 +543,9 @@
             // 7. CONNECTION MONITORING (optimized)
             // =====================================================
             function monitorConnection() {
+                const apiToken = apiTokenInput.value.trim();
+                if (!apiToken) return;
+
                 if (ws?.readyState === WebSocket.OPEN) {
                     if (Date.now() - lastMessageTime > 30000) {
                         ws.send(JSON.stringify({ "ping": 1 }));
@@ -550,11 +553,8 @@
                     }
                 } else if (ws?.readyState !== WebSocket.CONNECTING) {
                     if (!reconnectTimeout) {
-                        const apiToken = apiTokenInput.value.trim();
-                        if (apiToken) {
-                            log("Connection lost — reconnecting...", "warning");
-                            attemptReconnect(apiToken);
-                        }
+                        log("Connection lost — reconnecting...", "warning");
+                        attemptReconnect(apiToken);
                     }
                 }
             }
@@ -572,8 +572,8 @@
                 }
 
                 function clear() {
-                    if (primaryTimeout)  { clearTimeout(primaryTimeout);   primaryTimeout  = null; }
-                    if (safetyInterval)  { clearInterval(safetyInterval);  safetyInterval  = null; }
+                    if (primaryTimeout)  { clearTimeout(primaryTimeout);   primaryTimeout = null; }
+                    if (safetyInterval) { clearInterval(safetyInterval);  safetyInterval = null; }
                 }
 
                 function fire() {
@@ -642,7 +642,7 @@
                     const hours = String(nextTime.getHours()).padStart(2, '0');
                     const minutes = String(nextTime.getMinutes()).padStart(2, '0');
                     const seconds = String(nextTime.getSeconds()).padStart(2, '0');
-                    log(`Next trade scheduled at ${hours}:${minutes}:${seconds} (Server Time)`, 'info');
+                    log(`Next trade scheduled at ${hours}:${minutes}:${seconds} `, 'info');
                 }
 
                 const blob = new Blob([WORKER_SCRIPT], { type: 'application/javascript' });
@@ -672,7 +672,7 @@
                         return;
                     }
 
-                    log(`Timing window valid: min=${mins}, sec=${secs}. Opening trade...`, 'info');
+                    //log(`Timing window valid: min=${mins}, sec=${secs}. Opening trade...`, 'info');
                     clearNextTradeTimer();
                     placeTrade(currentStrategy);
                 };
@@ -713,6 +713,10 @@
                             if (autoTrading && !isTrading && !activeContractId) {
                                 scheduleNextTrade(true);
                             }
+                        } else {
+                            isAuthorized = false;
+                            log(`Authorization failed: ${data.error?.message || 'Invalid token'}`, 'error');
+                            toggleButtons(true);
                         }
                         break;
 
@@ -728,9 +732,11 @@
 
                     case 'error':
                         log(`API Error: ${data.error.message}`, 'error');
-                        updateTradingState(false);
-                        autoTrading = false;
-                        stopTrading();
+                        if (data.error.code === 'AuthorizationRequired' || data.error.code === 'InvalidToken') {
+                            isAuthorized = false;
+                            const apiToken = apiTokenInput.value.trim();
+                            if (apiToken) attemptReconnect(apiToken);
+                        }
                         break;
                 }
             }
@@ -755,9 +761,9 @@
                 } else {
                     log(`Trade failed: ${data.error?.message || 'Unknown error'}`, 'error');
                     updateTradingState(false);
-                    autoTrading = false;
+                    // Don't stop autoTrading here, just wait for next window
                     clearTradeTimeout();
-                    stopTrading();
+                    if (autoTrading) scheduleNextTrade();
                 }
             }
 
@@ -799,8 +805,9 @@
             function initializeWebSocket(apiToken) {
                 if (ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) return;
 
-                clearInterval(connectionMonitor);
-                connectionMonitor = setInterval(() => { monitorConnection(); }, CONNECTION_CHECK_INTERVAL);
+                if (!connectionMonitor) {
+                    connectionMonitor = setInterval(() => { monitorConnection(); }, CONNECTION_CHECK_INTERVAL);
+                }
 
                 clearInterval(pingInterval);
 
@@ -830,18 +837,20 @@
 
                 ws.onmessage = (event) => {
                     lastMessageTime = Date.now();
-                    const data = JSON.parse(event.data);
-                    handleWsMessage(data);
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleWsMessage(data);
+                    } catch (e) {
+                        console.error("Error parsing WS message", e);
+                    }
                 };
 
                 ws.onclose = () => {
-                    clearInterval(pingInterval);
-                    isAuthorized = false;
-                    toggleButtons(false);
                     if (!errorLogged) {
                         log('Connection closed', 'error');
                         errorLogged = true;
                     }
+                    isAuthorized = false;
                     clearNextTradeTimer();
                     updateTradingState(false);
                     attemptReconnect(apiToken);
@@ -849,9 +858,10 @@
 
                 ws.onerror = (error) => {
                     if (!errorLogged) {
-                        log(`Connection error: ${error.message || 'Unknown issue'}`, 'error');
+                        log(`Connection error`, 'error');
                         errorLogged = true;
                     }
+                    isAuthorized = false;
                     updateTradingState(false);
                     attemptReconnect(apiToken);
                 };
@@ -859,9 +869,11 @@
 
             function attemptReconnect(apiToken) {
                 clearTimeout(reconnectTimeout);
+                if (!apiToken) return;
                 reconnectTimeout = setTimeout(() => {
                     initializeWebSocket(apiToken);
-                }, 1000);
+                    reconnectTimeout = null;
+                }, 2000);
             }
 
             // =====================================================
@@ -873,8 +885,9 @@
                 }
 
                 const apiToken = apiTokenInput.value.trim();
-                if (!apiToken || ws?.readyState !== WebSocket.OPEN) {
-                    log("API token missing or not connected", "error");
+                if (!apiToken || ws?.readyState !== WebSocket.OPEN || !isAuthorized) {
+                    log("Not authorized or disconnected", "error");
+                    if (apiToken) initializeWebSocket(apiToken);
                     return;
                 }
 
@@ -916,6 +929,12 @@
             // 13. AUTO TRADING CONTROL
             // =====================================================
             function startAutoTrading(contractType) {
+                const apiToken = apiTokenInput.value.trim();
+                if (!apiToken) {
+                    log("Please enter an API token first", "error");
+                    return;
+                }
+
                 autoTrading = true;
                 currentStrategy = contractType;
                 lossStreak = 0;
@@ -925,7 +944,9 @@
                 const button = contractType === 'CALL' ? callButton : putButton;
                 setSelectedButton(button);
 
-                document.querySelectorAll('input, select, button').forEach(el => el.disabled = true);
+                document.querySelectorAll('input, select, button').forEach(el => {
+                    if (el.id !== 'stopButton') el.disabled = true;
+                });
                 stopButton.disabled = false;
 
                 clearNextTradeTimer();
@@ -965,11 +986,12 @@
 
             function toggleButtons(enable) {
                 const waitingForResults = activeContractId !== null;
-                [callButton, putButton].forEach(btn =>
-                    btn.disabled = !isAuthorized || !enable || autoTrading || isTrading || waitingForResults
-                );
+                const canInteract = isAuthorized && enable && !autoTrading && !isTrading && !waitingForResults;
+                
+                [callButton, putButton].forEach(btn => btn.disabled = !canInteract);
                 stopButton.disabled = !isAuthorized || !enable || (!autoTrading && !isTrading);
                 apiTokenInput.disabled = isTrading || autoTrading;
+                
                 if (autoTrading && selectedButton) {
                     selectedButton.classList.add('selected');
                 }
@@ -982,10 +1004,11 @@
             putButton.addEventListener('click', () => startAutoTrading('PUT'));
             stopButton.addEventListener('click', stopTrading);
 
-            apiTokenInput.addEventListener('input', (e) => {
+            apiTokenInput.addEventListener('change', (e) => {
                 const apiToken = e.target.value.trim();
-                localStorage.setItem('derivApiToken', apiToken);
-                if (apiToken && (!ws || ws.readyState !== WebSocket.OPEN)) {
+                if (apiToken) {
+                    localStorage.setItem('derivApiToken', apiToken);
+                    isAuthorized = false;
                     initializeWebSocket(apiToken);
                 }
             });
@@ -996,9 +1019,8 @@
                     apiTokenInput.value = savedToken;
                     initializeWebSocket(savedToken);
                 }
+                updateStats();
             });
-
-            updateStats();
         })();
     </script>
 </body>
