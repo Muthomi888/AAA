@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5min</title>
+   <style>
+        /* Updated CSS with bottom-only borders for inputs */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f0f2f5;
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Add these rules to your existing CSS, after the * selector */
+html, body {
+    -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
+    scrollbar-width: none;     /* Hide scrollbar for Firefox */
+    overflow-y: auto;
+}
+
+/* Add this rule to hide scrollbar for Chrome, Safari and Opera */
+::-webkit-scrollbar {
+    display: none;
+}
+
+
+.container {
+    max-width: 350px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-size: 10px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 5px;
+    color: #2a3f54;
+}
+
+/* Form Elements - UPDATED */
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #555;
+}
+
+/* Inputs with bottom-only borders */
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 5px;
+    border: none; /* Remove all borders */
+    border-bottom: 1px solid #ddd; /* Add bottom border only */
+    border-radius: 0px; /* Remove border-radius */
+    font-size: 10px;
+    background-color: transparent; /* Keep background consistent */
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-bottom-color: #4CAF50; /* Focus color only on bottom border */
+    box-shadow: 0 4px 5px -5px rgba(76, 175, 80, 0.3); /* Adjust shadow to bottom */
+}
+
+.grid-two-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+/* Buttons */
+button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 10px;
+    transition: all 0.3s ease;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#callButton {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#callButton:hover:not(:disabled) {
+    background-color: #45a049;
+}
+
+#putButton {
+    background-color: #f44336;
+    color: white;
+}
+
+#putButton:hover:not(:disabled) {
+    background-color: #d32f2f;
+}
+
+#stopButton {
+    background-color: #ff9800;
+    color: white;
+}
+
+#stopButton:hover:not(:disabled) {
+    background-color: #e68a00;
+}
+
+/* Add this to your existing CSS */
+#callButton.selected, #putButton.selected {
+    border: 3px solid #2196F3 !important;
+    box-shadow: 0 0 8px #2196F3 !important;
+}
+
+/* Adjust existing button styles to account for border */
+#callButton, #putButton {
+    border: 3px solid transparent;
+    box-sizing: border-box;
+}
+
+/* Stats and Status */
+.stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    flex-wrap: wrap;
+}
+
+.stat-box {
+    background-color: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    flex-grow: 1;
+    margin: 5px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.status {
+    text-align: center;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.status-ready {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-trading {
+    background-color: #fff3e0;
+    color: #e65100;
+}
+
+/* Log Section */
+#log {
+    height: 200px;
+    overflow-y: auto;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    font-family: monospace;
+    font-size: 10px;
+
+    /* Add these lines to hide the scrollbar */
+    -ms-overflow-style: none;  /* Hide scrollbar for IE and Edge */
+    scrollbar-width: none;     /* Hide scrollbar for Firefox */
+}
+
+#log::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome, Safari, and Opera */}
+
+.log-info {
+    color: #2196F3;
+    font-weight: medium;
+}
+
+.log-success {
+    color: #4CAF50;
+    font-weight: medium;
+}
+
+.log-warning {
+    color: #FF9800;
+    font-weight: bold;
+}
+
+.log-error {
+    color: #F44336;
+}
+
+.log-win {
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+.log-loss {
+    color: #F44336;
+    font-weight: bold;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    .grid-two-columns {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .stats {
+        flex-direction: column;
+    }
+    
+    .stat-box {
+        margin-bottom: 5px;
+    }
+}
+
+/* Header Section */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.header h2 {
+    color: #2a3f54;
+    margin: 0;
+}
+
+/* Input Group */
+.input-group {
+    position: relative;
+    margin-bottom: 5px;
+}
+
+.input-group label {
+    margin-bottom: 5px;
+}
+
+.input-group input {
+    margin-bottom: 0;
+}
+
+/* Animations */
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.status-trading {
+    animation: pulse 2s infinite;
+}
+
+/* Helper Classes */
+.text-center {
+    text-align: center;
+}
+
+.mt-10 {
+    margin-top: 5px;
+}
+
+.mb-10 {
+    margin-bottom: 5px;
+}
+    </style>
+</head>
+<body>
+
+        <!-- Trading Bot Section -->
+        <div class="container" id="trading-container">
+            
+            <div class="stats">
+                <div class="stat-box">
+                    Total Profit: <span id="totalProfit">0.00</span> USD
+                </div>
+            </div>
+
+            <label for="apiToken">API Token:</label>
+            <input type="text" id="apiToken" placeholder="Enter your API token">
+
+            <div class="grid-two-columns">
+                <div>
+                    <label for="tradeType">Trade Type:</label>
+                    <select id="tradeType">
+                        <option value="risefall">Rise/Fall</option>
+                        <option value="evenodd">Even/Odd</option>
+                    </select>
+                </div>
+            
+                <div>
+                    <label for="market">Market:</label>
+                    <select id="market">
+                        <option value="R_10">Volatility 10</option>
+                        <option value="R_25">Volatility 25</option>
+                        <option value="R_50">Volatility 50</option>
+                        <option value="R_75">Volatility 75</option>
+                        <option value="R_100">Volatility 100</option>
+                    </select>
+                </div>
+            
+                <div>
+                    <label for="baseStake">Stake:</label>
+                    <input type="number" id="baseStake" value="0.35" step="0.1" min="0.01">
+                </div>
+            
+                <div>
+                    <label for="stopLoss">Stop Loss:</label>
+                    <input type="number" id="stopLoss" value="130000" step="0.1" min="0.01">
+                </div>
+            
+                <div>
+                    <label for="takeProfit">Take Profit:</label>
+                    <input type="number" id="takeProfit" value="0.01" step="0.1" min="0.01">
+                </div>
+            
+                <div>
+                    <label for="duration">Duration (second):</label>
+                    <input type="number" id="duration" value="298" step="1" min="1">
+                </div>
+            </div>
+
+            <div class="grid-two-columns">
+                <button id="callButton" disabled>Rise</button>
+                <button id="putButton" disabled>Fall</button>
+            </div>
+            
+            <button id="stopButton" disabled style="width: 100%; margin-top: 10px;">Stop Trading</button>
+
+            <div id="log"></div>
+        </div>
+    <script>
+const callButton = document.getElementById('callButton');
+const putButton = document.getElementById('putButton');
+const stopButton = document.getElementById('stopButton');
+const logDiv = document.getElementById('log');
+const totalProfitSpan = document.getElementById('totalProfit');
+const tradeTypeSelect = document.getElementById('tradeType');
+const apiTokenInput = document.getElementById('apiToken');
+const baseStakeInput = document.getElementById('baseStake');
+const PING_INTERVAL = 12000; 
+
+// State variables
+let ws;
+let reconnectTimeout;
+let activeContractId = null;
+let isTrading = false;
+let currentStrategy = null;
+let lossStreak = 0;
+let totalProfit = 0;
+let lastStake = 0;
+let autoTrading = false;
+let activeTradeTimeout = null;
+let lossStreakStakes = 0;
+let pingInterval;
+let connectionMonitor;
+let errorLogged = false;
+let lastMessageTime = Date.now();
+let selectedButton = null;
+let isAuthorized = false;
+let timerId = null;
+let lastTradeInterval = -1; // To ensure only one trade per 5-min window
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const savedToken = localStorage.getItem('derivApiToken');
+    if (savedToken) {
+        apiTokenInput.value = savedToken;
+        initializeWebSocket(savedToken);
+    }
+});
+
+// Logging function - MAINTAINED ORIGINAL FORMAT
+function log(message, type = 'info') {
+  const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+  const timestamp = new Date().toLocaleTimeString([], options);
+  const fragment = document.createDocumentFragment();
+  const logEntry = document.createElement('p');
+  logEntry.className = `log-${type}`;
+  logEntry.textContent = `[${timestamp}] ${message}`;
+  fragment.appendChild(logEntry);
+  logDiv.insertBefore(fragment, logDiv.firstChild);
+}
+
+function getStrategyDisplay(strategy) {
+  if (!strategy) return '';
+  const tradeType = tradeTypeSelect.value;
+  if (tradeType === 'evenodd') {
+    return strategy === 'CALL' ? 'EVEN' : 'ODD';
+  } else {
+    return strategy === 'CALL' ? 'RISE' : 'FALL';
+  }
+}
+
+// UI event handlers
+tradeTypeSelect.addEventListener('change', () => {
+  const tradeType = tradeTypeSelect.value;
+  callButton.textContent = tradeType === 'risefall' ? 'RISE' : 'EVEN';
+  putButton.textContent = tradeType === 'risefall' ? 'FALL' : 'ODD';
+});
+
+// Trade calculation functions
+function calculateNextStake() {
+  const baseStake = parseFloat(baseStakeInput.value);
+  const nextStake = Number((baseStake * Math.pow(2.06, lossStreak)).toFixed(2));
+  // Update the input field with the calculated stake
+  baseStakeInput.value = nextStake;
+  return nextStake;
+}
+
+function checkStopLoss() {
+  const stopLoss = parseFloat(document.getElementById('stopLoss').value);
+  if (lossStreakStakes >= stopLoss) {
+    log(`Stop loss triggered! Lost $${lossStreakStakes.toFixed(2)} in current streak`, 'error');
+    stopTrading();
+    return true;
+  }
+  return false;
+}
+
+function checkTakeProfit() {
+  const takeProfit = parseFloat(document.getElementById('takeProfit').value);
+  if (totalProfit >= takeProfit) {
+    log(`Take profit reached! Total profit: ${totalProfit.toFixed(2)} USD`, 'success');
+    stopTrading();
+    return true;
+  }
+  return false;
+}
+
+function updateStats() {
+  totalProfitSpan.textContent = totalProfit.toFixed(2);
+}
+
+function updateTradingState(trading) {
+    isTrading = trading;
+    toggleButtons(!trading);
+}
+
+function monitorActiveTrade(contractId) {
+  clearTradeTimeout();
+  if (!contractId || ws?.readyState !== WebSocket.OPEN) return;
+  
+  ws.send(JSON.stringify({
+    proposal_open_contract: 1,
+    contract_id: contractId,
+    subscribe: 1
+  }));
+  
+  activeTradeTimeout = setTimeout(() => {
+    if (activeContractId === contractId) {
+      monitorActiveTrade(contractId);
+    }
+  }, 1000);
+}
+
+function clearTradeTimeout() {
+  if (activeTradeTimeout) {
+    clearTimeout(activeTradeTimeout);
+    activeTradeTimeout = null;
+  }
+}
+
+function monitorConnection() {
+  if (Date.now() - lastMessageTime > 900000 && ws?.readyState === WebSocket.OPEN) {
+    log("Connection stale - reconnecting", "warning");
+    ws.close();
+  }
+}
+
+// WebSocket connection management
+function initializeWebSocket(apiToken) {
+  if (ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) return;
+
+  clearInterval(pingInterval);
+  clearInterval(connectionMonitor);
+  
+  ws = new WebSocket('wss://ws.derivws.com/websockets/v3?app_id=1089');
+
+  ws.onopen = () => {
+    errorLogged = false;
+    log('WebSocket connected', 'success');
+    ws.send(JSON.stringify({ authorize: apiToken }));
+    
+    pingInterval = setInterval(() => {
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ "ping": 1 }));
+      }
+    }, PING_INTERVAL);
+
+    connectionMonitor = setInterval(monitorConnection, 10000);
+  };
+
+  ws.onmessage = (event) => {
+    lastMessageTime = Date.now();
+    const data = JSON.parse(event.data);
+    handleWsMessage(data);
+  };
+
+  ws.onclose = () => {
+    isAuthorized = false;
+    clearInterval(pingInterval);
+    clearInterval(connectionMonitor);
+    if (!errorLogged) {
+      log('Connection closed', 'error');
+      errorLogged = true;
+    }
+    toggleButtons(false);
+    attemptReconnect(apiToken);
+  };
+
+  ws.onerror = (error) => {
+    if (!errorLogged) {
+      log('Connection error', 'error');
+      errorLogged = true;
+    }
+    attemptReconnect(apiToken);
+  };
+}
+
+function handleWsMessage(data) {
+  switch(data.msg_type) {
+    case 'authorize':
+      if (data.authorize) {
+        isAuthorized = true;
+        log('Authorization successful', 'success');
+        toggleButtons(true);
+        if (activeContractId) {
+            monitorActiveTrade(activeContractId);
+        }
+      } else {
+        isAuthorized = false;
+        log('Authorization failed', 'error');
+        toggleButtons(false);
+      }
+      break;
+    case 'buy':
+      handleBuyResponse(data);
+      break;
+    case 'proposal_open_contract':
+      if (data.proposal_open_contract) {
+        handleContractUpdate(data.proposal_open_contract);
+      }
+      break;
+    case 'error':
+      log(`API Error: ${data.error.message}`, 'error');
+      if (data.error.code === 'AuthorizationRequired') {
+          isAuthorized = false;
+          toggleButtons(false);
+      }
+      if (data.msg_type === 'buy' || data.error.code === 'InputValidationFailed') {
+          isTrading = false;
+          if (!autoTrading) toggleButtons(true);
+      }
+      break;
+  }
+}
+
+function handleBuyResponse(data) {
+  if (data.buy) {
+    activeContractId = data.buy.contract_id;
+    lastStake = data.buy.buy_price;
+    const marketElement = document.getElementById('market');
+    const marketDisplayName = marketElement.options[marketElement.selectedIndex].text;
+    const displayStrategy = getStrategyDisplay(currentStrategy);
+    
+    // ORIGINAL LOG FORMAT MAINTAINED
+    log(`Placed ${displayStrategy} Trade on ${marketDisplayName} | $${lastStake.toFixed(2)} |`);
+    
+    updateTradingState(true);
+    monitorActiveTrade(activeContractId);
+  } else {
+    log(`Trade failed: ${data.error?.message || 'Unknown error'}`, 'error');
+    isTrading = false;
+    if (!autoTrading) toggleButtons(true);
+  }
+}
+
+function attemptReconnect(apiToken) {
+  clearTimeout(reconnectTimeout);
+  reconnectTimeout = setTimeout(() => {
+    initializeWebSocket(apiToken);
+  }, 2000);
+}
+
+function placeTrade(contractType) {
+  if (isTrading || activeContractId !== null) return;
+  
+  const apiToken = apiTokenInput.value.trim();
+  if (!apiToken || ws?.readyState !== WebSocket.OPEN || !isAuthorized) {
+    log("Not authorized to trade", "error");
+    return;
+  }
+  
+  const stake = calculateNextStake();
+  const duration = parseInt(document.getElementById('duration').value);
+  const market = document.getElementById('market').value;
+  
+  const finalContractType = tradeTypeSelect.value === 'evenodd' 
+    ? (contractType === 'CALL' ? 'DIGITEVEN' : 'DIGITODD')
+    : (contractType === 'CALL' ? 'CALL' : 'PUT');
+    
+  const trade = {
+    buy: 1,
+    price: stake,
+    parameters: {
+      amount: stake,
+      basis: 'stake',
+      contract_type: finalContractType,
+      currency: 'USD',
+      duration: duration,
+      duration_unit: 's',
+      symbol: market,
+    }
+  };
+
+  currentStrategy = contractType;
+  lastStake = stake;
+  isTrading = true;
+  ws.send(JSON.stringify(trade));
+}
+
+function handleContractUpdate(contract) {
+  if (contract.contract_id !== activeContractId) return;
+  
+  if (contract.is_expired) {
+    clearTradeTimeout();
+    activeContractId = null;
+    const profit = contract.profit;
+    totalProfit += profit;
+    
+    if (profit < 0) {
+      lossStreak++;
+      lossStreakStakes += lastStake;
+      // ORIGINAL LOG FORMAT MAINTAINED
+      log(`Loss: -$${lastStake.toFixed(2)} | Total: $${lossStreakStakes.toFixed(2)} | ☠️`, 'loss');
+      if (checkStopLoss()) return;
+    } else {
+      lossStreak = 0;
+      lossStreakStakes = 0;
+      // ORIGINAL LOG FORMAT MAINTAINED
+      log(`Win! +$${profit.toFixed(2)} | Total: $${totalProfit.toFixed(2)} | 🤑`, 'win');
+      if (checkTakeProfit()) return;
+    }
+    
+    updateStats();
+    updateTradingState(false);
+    if (autoTrading) displayNextTradeTimes();
+  }
+}
+
+function checkTradeTime() {
+    if (!autoTrading || isTrading || activeContractId !== null) return;
+    
+    const now = new Date();
+    const seconds = now.getSeconds();
+    const minutes = now.getMinutes();
+    const currentInterval = Math.floor(now.getTime() / (5 * 60000));
+    
+    if (currentInterval === lastTradeInterval) return;
+
+    if (seconds === 58 && (minutes % 5 === 4)) {
+        lastTradeInterval = currentInterval;
+        placeTrade(currentStrategy);
+    }
+}
+
+function displayNextTradeTimes() {
+    if (!autoTrading) return;
+    const now = new Date();
+    const currentMinutes = now.getMinutes();
+    const remainder = currentMinutes % 5;
+    let minutesToAdd = 4 - remainder;
+    if (minutesToAdd < 0 || (minutesToAdd === 0 && now.getSeconds() >= 58)) {
+        minutesToAdd += 5;
+    }
+    const nextTradeTime = new Date(now.getTime() + minutesToAdd * 60000);
+    nextTradeTime.setSeconds(58);
+    nextTradeTime.setMilliseconds(0);
+    const options = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+    log(`Next trade scheduled for ${nextTradeTime.toLocaleTimeString([], options)}`, 'info');
+}
+
+function setSelectedButton(button) {
+    if (selectedButton) selectedButton.classList.remove('selected');
+    selectedButton = button;
+    if (button) button.classList.add('selected');
+}
+
+function startAutoTrading(contractType) {
+    if (!isAuthorized) {
+        log("Please authorize first", "error");
+        return;
+    }
+    autoTrading = true;
+    currentStrategy = contractType;
+    setSelectedButton(contractType === 'CALL' ? callButton : putButton);
+    
+    lastTradeInterval = -1;
+
+    if (timerId) clearInterval(timerId);
+    timerId = setInterval(checkTradeTime, 50);
+    
+    displayNextTradeTimes();
+    toggleButtons(false);
+    stopButton.disabled = false;
+}
+
+function stopTrading() {
+    autoTrading = false;
+    if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+    }
+    setSelectedButton(null);
+    updateTradingState(false);
+    log('Trading stopped', 'info');
+}
+
+function toggleButtons(enable) {
+    const canInteract = enable && isAuthorized && !isTrading && !autoTrading;
+    
+    apiTokenInput.disabled = isTrading || autoTrading;
+    [callButton, putButton, tradeTypeSelect, document.getElementById('market'), 
+     baseStakeInput, document.getElementById('stopLoss'), 
+     document.getElementById('takeProfit'), document.getElementById('duration')]
+    .forEach(el => { if(el) el.disabled = !canInteract; });
+    
+    stopButton.disabled = !autoTrading && !isTrading;
+}
+
+// Event Listeners
+callButton.addEventListener('click', () => startAutoTrading('CALL'));
+putButton.addEventListener('click', () => startAutoTrading('PUT'));
+stopButton.addEventListener('click', stopTrading);
+apiTokenInput.addEventListener('input', (e) => {
+  const apiToken = e.target.value.trim();
+  localStorage.setItem('derivApiToken', apiToken);
+  if (apiToken.length > 10) initializeWebSocket(apiToken);
+});
+
+updateStats();
+    </script>
+</body>
+</html>
